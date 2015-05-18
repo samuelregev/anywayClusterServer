@@ -1,0 +1,30 @@
+﻿@model IEnumerable<AnywayBackend.ViewModels.EnrollmentDateGroup>
+
+@{
+    ViewBag.Title = "Statistics";
+}
+
+<h2>Accident Statistics</h2>
+
+<table>
+    <tr>
+        <th>
+            Date
+        </th>
+        <th>
+            Accidents
+        </th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.EnrollmentDate)
+            </td>
+            <td>
+                @item.AccidentCount
+            </td>
+        </tr>
+    }
+</table>

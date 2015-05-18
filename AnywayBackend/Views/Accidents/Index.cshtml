@@ -1,0 +1,77 @@
+﻿@model PagedList.IPagedList<AnywayBackend.Models.Accident>
+@using PagedList.Mvc;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Index</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+
+Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+
+@Html.PagedListPager(Model, page => Url.Action("Index",
+    new { page, sortOrder = ViewBag.CurrentSort, currentFilter = ViewBag.CurrentFilter }))
+<br />
+<table class="table">
+    <tr>
+        <th>
+            Date
+        </th>
+        <th>
+            Latitude
+        </th>
+        <th>
+            Longitude
+        </th>
+        <th>
+            Type
+        </th>
+        <th>
+            Sub Type
+        </th>
+        <th>
+            Severity
+        </th>
+        <th>
+            Location Accuracy
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.date)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.latitude)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.longitude)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.type)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.subtype)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.severity)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.locationAccuracy)
+        </td>
+        <td>
+            @Html.ActionLink("Details", "Details", new { id=item.AccidentId })
+        </td>
+    </tr>
+}
+
+</table>
+
+
