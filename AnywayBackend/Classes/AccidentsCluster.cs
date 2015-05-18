@@ -18,5 +18,17 @@ namespace AnywayBackend.Classes
             this.lng = acd.lng;
             this.count = acd.accidentsCount;
         }
+
+        public AccidentsCluster(double lat, double lng)
+        {
+            this.lat = lat;
+            this.lng = lng;
+            this.count = 1;
+        }
+
+        public void plusOne()
+        {
+            count++;
+        }
     }
 }

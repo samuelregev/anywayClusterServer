@@ -20,15 +20,7 @@ namespace AnywayBackend.Controllers
     {
         private ApplicationDbContext db = new ApplicationDbContext();
 
-        // GET: api/all
-        [Route("api/all")]
-        [CacheOutput(ClientTimeSpan = int.MaxValue, ServerTimeSpan = int.MaxValue)]
-        public IQueryable<Accident> GetAccidents()
-        {
-            return db.Accidents;
-        }
-
-        // GET: /api/?ne_lat=32.40978390688122&ne_lng=35.299824657577574&sw_lat=31.760538202995313&sw_lng=34.651631298202574&start_date=1356991200&end_date=1357077600&zoom_level=15&show_fatal=1&show_severe=1&show_light=1&show_inaccurate=1
+        // GET: /api/?ne_lat=32.4&ne_lng=35.2&sw_lat=31.7&sw_lng=34.4&start_date=1356991200&end_date=1357077600&zoom_level=15&show_fatal=1&show_severe=1&show_light=1&show_inaccurate=1
         [Route("api")]
         [CacheOutput(ClientTimeSpan = int.MaxValue, ServerTimeSpan = int.MaxValue)]
         public IQueryable<Accident> GetAccidentsByParameters(double ne_lat, double ne_lng, double sw_lat, double sw_lng,
@@ -41,21 +33,10 @@ namespace AnywayBackend.Controllers
             const int SEVERITY_SEVERE = 2; // קשה
             const int SEVERITY_LIGHT = 3; // קלה
 
-            int locationAccuracy = 1;
-            if (show_inaccurate == 1)
-                locationAccuracy = 3;
-
-            int showFatal = 0;
-            if (show_fatal == 1)
-                showFatal = SEVERITY_FATAL;
-
-            int showSevere = 0;
-            if (show_severe == 1)
-                showSevere = SEVERITY_SEVERE;
-
-            int showLight = 0;
-            if (show_light == 1)
-                showLight = SEVERITY_LIGHT;
+            int locationAccuracy = show_inaccurate == 1 ? 3 : 1;
+            int showFatal = show_fatal == 1 ? SEVERITY_FATAL : 0;
+            int showSevere = show_severe == 1 ? SEVERITY_SEVERE : 0;
+            int showLight = show_light == 1 ? SEVERITY_LIGHT : 0;
 
             return db.Accidents.Where(s => 
                 (s.severity == showFatal || s.severity == showSevere || s.severity == showLight) &&
@@ -78,21 +59,10 @@ namespace AnywayBackend.Controllers
             const int SEVERITY_SEVERE = 2; // קשה
             const int SEVERITY_LIGHT = 3; // קלה
 
-            int locationAccuracy = 1;
-            if (show_inaccurate == 1)
-                locationAccuracy = 3;
-
-            int showFatal = 0;
-            if (show_fatal == 1)
-                showFatal = SEVERITY_FATAL;
-
-            int showSevere = 0;
-            if (show_severe == 1)
-                showSevere = SEVERITY_SEVERE;
-
-            int showLight = 0;
-            if (show_light == 1)
-                showLight = SEVERITY_LIGHT;
+            int locationAccuracy = show_inaccurate == 1 ? 3 : 1;
+            int showFatal = show_fatal == 1 ? SEVERITY_FATAL : 0;
+            int showSevere = show_severe == 1 ? SEVERITY_SEVERE : 0;
+            int showLight = show_light == 1 ? SEVERITY_LIGHT : 0;
 
             IQueryable<Accident> data = db.Accidents.Where(s =>
                 (s.severity == showFatal || s.severity == showSevere || s.severity == showLight) &&
@@ -101,70 +71,34 @@ namespace AnywayBackend.Controllers
                 s.date >= startDate && s.date <= endDate &&
                 s.locationAccuracy <= locationAccuracy);
 
-            int cluster_count = 3;
+            List<AccidentsCluster> clusters = new List<AccidentsCluster>();
 
-            // force one marker when in zoom level showing all israel
-            if (zoom_level <= 7)
-                cluster_count = 1;
-
-            double cluster_size_lat = (ne_lat - sw_lat) / cluster_count;
-            double cluster_size_lng = (ne_lng - sw_lng) / cluster_count;
-
-            List<AccidentsClusterDetails> theList = new List<AccidentsClusterDetails>();
-
-            // create the clusters and set their bounderies
-            for (int i = 0; i < cluster_count; i++)
-            {
-                for (int j = 0; j < cluster_count; j++)
-                {
-                    AccidentsClusterDetails acd = new AccidentsClusterDetails();
-                    acd.ne_lat = ne_lat - i * cluster_size_lat;
-                    acd.ne_lng = ne_lng - j * cluster_size_lng;
-
-                    acd.sw_lat = ne_lat - (i + 1) * cluster_size_lat;
-                    acd.sw_lng = ne_lng - (j + 1) * cluster_size_lng;
-
-                    acd.lat = acd.ne_lat - ((acd.ne_lat - acd.sw_lat) / 2);
-                    acd.lng = acd.ne_lng - ((acd.ne_lng - acd.sw_lng)) / 2;
-
-                    acd.accidentsCount = 0;
-
-                    theList.Add(acd);
-                }
-            }
-
-            // count accidents in each cluster
+            // Maximum radius of cluster
+            double max_cluster_radius = 1024000;
+            for (int i = 4; i <= zoom_level; i++)
+                max_cluster_radius /= 2;
+            
+            bool match;
             foreach (Accident a in data)
             {
-                foreach (AccidentsClusterDetails acd in theList)
+                match = false;
+                foreach (AccidentsCluster ac in clusters)
                 {
-                    if (a.latitude >= acd.sw_lat && a.latitude <= acd.ne_lat && 
-                        a.longitude >= acd.sw_lng && a.longitude <= acd.ne_lng)
-                    {
-                        acd.accidentsCount++;
+                    // calculate distance between current cluster and the accident
+                    // if distance is smaller then maxDistance count it as belong to this marker
+                    double distanceBetween = distance(ac.lat, ac.lng, a.latitude, a.longitude);
+                    if (distanceBetween < max_cluster_radius) {
+                        ac.plusOne();
+                        match = true;
                         break;
                     }
                 }
-            }
 
-            // remove empty clusters
-            List<AccidentsClusterDetails> empty = theList.Where(s => s.accidentsCount == 0).ToList();
-            foreach (AccidentsClusterDetails acd in empty)
-                theList.Remove(acd);
-
-            // convert to simple-er type to return fewer arguments
-            List<AccidentsCluster> returnList = new List<AccidentsCluster>();
-            foreach (AccidentsClusterDetails acd in theList)
-                returnList.Add(new AccidentsCluster(acd));
-
-            // force marker to center of israel in low zoom levels
-            if (zoom_level <= 7)
-            {
-                returnList.First().lat = 31.774511;
-                returnList.First().lng = 35.011642;
+                if (!match)
+                    clusters.Add(new AccidentsCluster(a.latitude, a.longitude));
             }
             
-            return returnList;
+            return clusters;
         }
 
         public static DateTime UnixTimeStampToDateTime(double unixTimeStamp)
@@ -178,6 +112,30 @@ namespace AnywayBackend.Controllers
         public static double DateTimeToUnixTimestamp(DateTime dateTime)
         {
             return (dateTime - new DateTime(1970, 1, 1).ToLocalTime()).TotalSeconds;
+        }
+
+        // return - distance between two lat/lng points in meters
+        private double distance(double lat1, double lon1, double lat2, double lon2)
+        {
+            double theta = lon1 - lon2;
+            double dist = Math.Sin(deg2rad(lat1)) * Math.Sin(deg2rad(lat2)) + Math.Cos(deg2rad(lat1)) * Math.Cos(deg2rad(lat2)) * Math.Cos(deg2rad(theta));
+            dist = Math.Acos(dist);
+            dist = rad2deg(dist);
+            dist = dist * 60 * 1.1515;
+            dist = dist * 1.609344;
+            dist = dist * 1000;
+
+            return (dist);
+        }
+
+        private double deg2rad(double deg)
+        {
+            return (deg * Math.PI / 180.0);
+        }
+
+        private double rad2deg(double rad)
+        {
+            return (rad / Math.PI * 180.0);
         }
 
         protected override void Dispose(bool disposing)
