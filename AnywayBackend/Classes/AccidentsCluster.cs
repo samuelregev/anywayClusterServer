@@ -12,13 +12,6 @@ namespace AnywayBackend.Classes
         public double lng { get; set; }
         public int count { get; set; }
 
-        public AccidentsCluster(AccidentsClusterDetails acd)
-        {
-            this.lat = acd.lat;
-            this.lng = acd.lng;
-            this.count = acd.accidentsCount;
-        }
-
         public AccidentsCluster(double lat, double lng)
         {
             this.lat = lat;
