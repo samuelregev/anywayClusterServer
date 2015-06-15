@@ -259,6 +259,7 @@
     <Content Include="Views\Home\Import.cshtml" />
     <Content Include="Views\Disqus\Index.cshtml" />
     <Content Include="Views\Disqus\Login.cshtml" />
+    <Content Include="Views\Disqus\NewDiscussion.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

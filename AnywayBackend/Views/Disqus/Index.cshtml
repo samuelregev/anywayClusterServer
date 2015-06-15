@@ -14,6 +14,17 @@
         var disqus_shortname = '@ViewBag.diqus_shortname';
         var disqus_identifier = '@ViewBag.disqus_id';
 
+        @if (ViewBag.newDiscussion == true)
+        {
+            @:function disqus_config() {
+            @:    this.callbacks.onNewComment = [
+            @:        function (comment) {
+            @:            window.location.replace("/disqus/new-discussion");
+            @:        }
+            @:    ];
+            @:}
+        }
+
 		/* * * DON'T EDIT BELOW THIS LINE * * */
 		(function() {
 			var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

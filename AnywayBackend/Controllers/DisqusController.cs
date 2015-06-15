@@ -10,17 +10,25 @@ namespace AnywayBackend.Controllers
     {
         // GET: Disqus
         [Route("disqus/{shortname}")]
-        public ActionResult Index(string shortname, string lat, string lng)
+        public ActionResult Index(string shortname, string identifier, bool newDiscussion = false)
         {
-            string discussion_id = "(" + lat + ", " + lng + ")";
-            ViewBag.Title = discussion_id;
+            ViewBag.newDiscussion = newDiscussion;
+            ViewBag.Title = identifier;
             ViewBag.diqus_shortname = shortname;
-            ViewBag.disqus_id = discussion_id;
+            ViewBag.disqus_id = identifier;
             return View();
         }
 
         // GET: Disqus/login
+        [Route("disqus/login")]
         public ActionResult login()
+        {
+            return View();
+        }
+
+        // GET: Disqus/login
+        [Route("disqus/new-discussion")]
+        public ActionResult NewDiscussion()
         {
             return View();
         }
