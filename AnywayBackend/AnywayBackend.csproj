@@ -210,6 +210,7 @@
     <Content Include="Content\Site.css" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
+    <Content Include="ClassDiagram1.cd" />
     <None Include="Properties\PublishProfiles\anywayCluster.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\jquery-1.10.2.js" />
@@ -241,7 +242,6 @@
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
     <Content Include="Views\Accidents\Details.cshtml" />
     <Content Include="Views\Accidents\Index.cshtml" />
-    <Content Include="Views\Home\Import.cshtml" />
     <Content Include="Views\Disqus\Index.cshtml" />
     <Content Include="Views\Disqus\Login.cshtml" />
     <Content Include="Views\Disqus\NewDiscussion.cshtml" />

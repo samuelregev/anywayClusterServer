@@ -12,11 +12,11 @@ namespace AnywayBackend.Classes
         public double lng { get; set; }
         public int count { get; set; }
 
-        public AccidentsCluster(double lat, double lng)
+        public AccidentsCluster(double lat, double lng, int count = 1)
         {
             this.lat = lat;
             this.lng = lng;
-            this.count = 1;
+            this.count = count;
         }
 
         public void plusOne()

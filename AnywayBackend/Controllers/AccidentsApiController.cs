@@ -7,18 +7,13 @@ using AnywayBackend.Models;
 using WebApi.OutputCache.V2;
 using AnywayBackend.Classes;
 
-
-//using System.Data;
-//using System.Data.Entity;
-//using System.Data.Entity.Infrastructure;
-//using System.Net.Http;
-//using System.Web.Http.Description;
-
 namespace AnywayBackend.Controllers
 {
     public class AccidentsApiController : ApiController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
+
+        // get accidents list by parameters, just fro testing purposes
 
         // GET: /api/?ne_lat=32.4&ne_lng=35.2&sw_lat=31.7&sw_lng=34.4&start_date=1356991200&end_date=1357077600&zoom_level=15&show_fatal=1&show_severe=1&show_light=1&show_inaccurate=1
         [Route("api")]
@@ -46,18 +41,20 @@ namespace AnywayBackend.Controllers
                 s.locationAccuracy <= locationAccuracy);
         }
 
+        // this is where the magic happend, calculating the accidents clusters 
         // GET: /api/cluster?ne_lat=32.40978390688122&ne_lng=35.299824657577574&sw_lat=31.760538202995313&sw_lng=34.651631298202574&start_date=1356991200&end_date=1357077600&zoom_level=15&show_fatal=1&show_severe=1&show_light=1&show_inaccurate=1
         [Route("api/cluster")]
         [CacheOutput(ClientTimeSpan = int.MaxValue, ServerTimeSpan = int.MaxValue)]
         public List<AccidentsCluster> GetAccidentsByParametersClustered(double ne_lat, double ne_lng, double sw_lat, double sw_lng,
             string start_date, string end_date, int show_fatal, int show_severe, int show_light, int show_inaccurate, int zoom_level)
         {
+            // get date range (as unix time stamp) and convert it to DateTime objects
             DateTime startDate = UnixTimeStampToDateTime(double.Parse(start_date));
             DateTime endDate = UnixTimeStampToDateTime(double.Parse(end_date));
 
-            const int SEVERITY_FATAL = 1; // תאונה קטלנית
-            const int SEVERITY_SEVERE = 2; // קשה
-            const int SEVERITY_LIGHT = 3; // קלה
+            const int SEVERITY_FATAL = 1;
+            const int SEVERITY_SEVERE = 2;
+            const int SEVERITY_LIGHT = 3;
 
             int locationAccuracy = show_inaccurate == 1 ? 3 : 1;
             int showFatal = show_fatal == 1 ? SEVERITY_FATAL : 0;
@@ -73,14 +70,24 @@ namespace AnywayBackend.Controllers
 
             List<AccidentsCluster> clusters = new List<AccidentsCluster>();
 
-            // Maximum radius of cluster
-            double max_cluster_radius = 1024000;
-            for (int i = 4; i <= zoom_level; i++)
+            // if zoom level is < 7 (showing all Israel map) avoid calculatin, just show one marker with all data
+            if (zoom_level < 7)
+            {
+                clusters.Add(new AccidentsCluster(31.774511, 35.011642, data.Count()));
+                return clusters;
+            }
+
+            // Calculate maximum radius of cluster (in meters), different for each zoom level
+            // 2^(16-(7-zoom))
+            double max_cluster_radius = 65536;
+            for (int i = 7; i < zoom_level; i++)
                 max_cluster_radius /= 2;
             
             bool match;
             foreach (Accident a in data)
             {
+                // look for a cluster that the distance between the accident and the 
+                // cluster center is smaller then max_cluster_radius
                 match = false;
                 foreach (AccidentsCluster ac in clusters)
                 {
@@ -94,6 +101,8 @@ namespace AnywayBackend.Controllers
                     }
                 }
 
+                // could not find such cluster, create a new cluster.
+                // the center of the new cluster will be the accident location
                 if (!match)
                     clusters.Add(new AccidentsCluster(a.latitude, a.longitude));
             }
